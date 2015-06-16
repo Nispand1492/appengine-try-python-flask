@@ -103,10 +103,13 @@ def hello():
         print "created table"
         ea = read_file(filename,cursor)
         conobj.commit()
+        extract = "select week(time) ,count(id) as Earthquakes ,mag as magnitude from earthquake group by mag,week(time) having mag in (2,3,4,5) or mag>5"
+        result = cursor.execute(extract)
+
         trunc = "DROP TABLE earthquake"
         cursor.execute(trunc)
-        print type(ea)
-        return ea
+        #print type(ea)
+        return result
     except Exception as e :
         print str(e)
         return e
