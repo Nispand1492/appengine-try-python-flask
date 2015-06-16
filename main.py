@@ -62,7 +62,9 @@ def read_file(filename,cursor):
     return result
 
 def insert(csv_data,cursor):
+   print csv_data
    csv_data.next()
+   print csv_data
    try:
        for row in csv_data:
            row[0] = slicing(row[0])
