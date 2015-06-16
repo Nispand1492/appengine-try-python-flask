@@ -1,33 +1,28 @@
-import argparse
-import json
+#NAME: NISPAND MEHTA
+#ID_NUMBER: 1001163146
+#BATCH TIME: 3.30 to 5.30 p.m.
+"""Links Referred::
+https://www.facebook.com/l.php?u=https%3A%2F%2Fconsole.developers.google.com%2Fstart%2Fappengine%3F_ga%3D1.237094793.840266212.1433886398&h=CAQFXCrYN
+http://stackoverflow.com/questions/3215140/google-app-engine-appcfg-py-rollback
+https://cloud.google.com/appengine/docs/python/googlecloudstorageclient/
+http://nealbuerger.com/2013/12/google-app-engine-import-csv-to-datastore/
+https://www.daniweb.com/software-development/python/threads/228057/insert-file-data-in-mysql-using-python
+http://stackoverflow.com/questions/15064376/python-read-a-csv-and-place-values-in-mysql-database
+"""
 import os
 import csv
-import argparse
-import httplib2
-import sys
-import time
-import datetime
-import io
-import hashlib
-import logging
 import cloudstorage as gcs
 
-import webapp2
+
 # Google apliclient (Google App Engine specific) libraries
-from apiclient import discovery
-from oauth2client import file
-from oauth2client import client
-from oauth2client import tools
 from google.appengine.api import app_identity
 from StringIO import StringIO
-import googleapiclient.http
+
 from bottle import route, request, response, template
 
 import MySQLdb
 
 # Google apliclient (Google App Engine specific) libraries
-from oauth2client import client
-from oauth2client import tools
 
 from bottle import Bottle
 import time
@@ -46,18 +41,18 @@ my_default_retry_params = gcs.RetryParams(initial_delay=0.2,
 # Note: the built-in default is good enough for most cases. We override
 # retry_params here only for demo purposes.
 gcs.set_default_retry_params(my_default_retry_params)
-
+#set bucket name and connect it to default bucket
 bucket_name = os.environ.get('csecloud-971.appspot.com',
                                  app_identity.get_default_gcs_bucket_name())
 bucket = '/' + bucket_name
 filename = bucket + '/all_month.csv'
-
-# Note: We don't need to call run() since our application is embedded within
-# the App Engine WSGI application server.
+#Route to get CSV file from User
+#It will return a template defined in views folder
 @bottle.route('/route_to_upload_file')
 def route_to_upload_file():
     return template('get_file',name="hello")
 
+#function to upload file on google bucket
 @bottle.route('/upload_file',method='POST')
 def upload_file():
     start_time = time.time()
@@ -73,16 +68,18 @@ def upload_file():
     time_taken = end_time-start_time
     return template('time_taken_to_upload',time_taken=time_taken)
 
+#Read File from bucket
 def read_file(filename,cursor):
     with gcs.open(filename,'r') as gcs_file:
         csv_data = csv.reader(StringIO(gcs_file.read()),delimiter=',',quotechar = '"')
     print csv_data
-    print "file read successssssjvgbhgbg"
+    print "file read successfull"
     result = insert(csv_data,cursor)
     gcs_file.close()
 
     return result
 
+#Insert into Google MySQLdb
 def insert(csv_data,cursor):
    print csv_data
    csv_data.next()
@@ -97,7 +94,6 @@ def insert(csv_data,cursor):
            place = str(row[13])
            place = place.replace("'","")
            qry = "INSERT INTO earthquake(time,latitude,longitude,depth,mag,magType,nst,gap,dmin,rms,net,id,updated,place,type) VALUES('"+row[0]+"',"+row[1]+","+row[2]+","+row[3]+","+row[4]+",'"+row[5]+"',"+row[6]+","+row[7]+","+row[8]+","+row[9]+",'"+row[10]+"','"+row[11]+"','"+row[12]+"','"+place+"','"+row[14]+"')"
-           #print qry
            cursor.execute(qry)
        return "success"
    except Exception as e:
@@ -108,8 +104,7 @@ def slicing(str1):
     return ans1
 
 @bottle.route('/')
-def hello():
-    """Return a friendly HTTP greeting."""
+def main_fun():
     try:
         conobj = MySQLdb.connect(unix_socket='/cloudsql/csecloud-971:cloudsql',user='root')
         cursor = conobj.cursor()
@@ -127,29 +122,24 @@ def hello():
         timetaken = time.time() - start_time
         conobj.commit()
         extract = "select * from earthquake group by mag,week(time) having mag in (2,3,4,5) or mag>5"
-        result = cursor.execute(extract)
+        cursor.execute(extract)
         ans = " "
         data = cursor.fetchall()
         for x in data:
-            ans = ans + str(x)+"\n"
-        #print type(data)
+            ans = ans + str(x)+"</br>"
+
         qry = "Select count(*) from earthquake"
         cursor.execute(qry)
         count = cursor.fetchall()
         print count
         trunc = "DROP TABLE earthquake"
         cursor.execute(trunc)
-        #print type(ea)
-        return "Time taken to insert into database MySql ="+str(timetaken)+"Number of Earthquake Greater than 2,3,4,5::"+ ans
+        return "Time taken to insert into database MySql ="+str(timetaken)+"<br>Number of Earthquake Greater than 2,3,4,5::<br>"+ ans
 
     except Exception as e :
         print str(e)
         return e
 
-    # sample.dat file stores the short lived access tokens,which your application requests user data, attaching the access token to the request.
-    # so that user need tnot validate through the browser everytime.This is optional.If the credentials don't exist
-    # or are invalid run through the native client flow.The storage object will ensure that if successfull the good
-    # credentials will get written back to the file(sample.dat in     is case"hurray"
 # Define an handler for 404 errors.
 @bottle.error(404)
 def error_404(error):
