@@ -55,8 +55,8 @@ filename = bucket + '/earthquake.csv'
 def read_file(filename,cursor):
     with gcs.open(filename,'r') as gcs_file:
         csv_data = csv.reader(StringIO(gcs_file.read()),delimiter=',',quotechar = '"')
-    print "file read success"
-    print  csv_data
+    print csv_data
+    print "file read successssssjvgbhgbg"
     result = insert(csv_data,cursor)
     gcs_file.close()
 
