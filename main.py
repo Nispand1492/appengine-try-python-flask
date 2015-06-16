@@ -71,7 +71,7 @@ def insert(csv_data,cursor):
            row[0] = slicing(row[0])
            row[12] = slicing(row[12])
            for i in range(0,13):
-               if row[i] == ' ':
+               if row[i] == '':
                    row[i] = "''"
            place = str(row[13])
            place.replace("'"," ")
