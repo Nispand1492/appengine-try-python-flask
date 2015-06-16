@@ -11,6 +11,7 @@ import io
 import hashlib
 import logging
 import cloudstorage as gcs
+
 import webapp2
 # Google apliclient (Google App Engine specific) libraries
 from apiclient import discovery
@@ -20,6 +21,7 @@ from oauth2client import tools
 from google.appengine.api import app_identity
 from StringIO import StringIO
 import googleapiclient.http
+from bottle import route, request, response, template
 
 import MySQLdb
 
@@ -48,7 +50,7 @@ gcs.set_default_retry_params(my_default_retry_params)
 bucket_name = os.environ.get('csecloud-971.appspot.com',
                                  app_identity.get_default_gcs_bucket_name())
 bucket = '/' + bucket_name
-filename = bucket + '/earthquake.csv'
+filename = bucket + '/all_month.csv'
 
 # Note: We don't need to call run() since our application is embedded within
 # the App Engine WSGI application server.
@@ -76,7 +78,7 @@ def insert(csv_data,cursor):
            place = str(row[13])
            place = place.replace("'","")
            qry = "INSERT INTO earthquake(time,latitude,longitude,depth,mag,magType,nst,gap,dmin,rms,net,id,updated,place,type) VALUES('"+row[0]+"',"+row[1]+","+row[2]+","+row[3]+","+row[4]+",'"+row[5]+"',"+row[6]+","+row[7]+","+row[8]+","+row[9]+",'"+row[10]+"','"+row[11]+"','"+row[12]+"','"+place+"','"+row[14]+"')"
-           print qry
+           #print qry
            cursor.execute(qry)
        return "success"
    except Exception as e:
@@ -101,16 +103,26 @@ def hello():
         table = "CREATE TABLE IF NOT EXISTS earthquake (time TIMESTAMP, latitude DOUBLE, longitude DOUBLE, depth DOUBLE, mag DOUBLE, magType VARCHAR(100), nst DOUBLE, gap DOUBLE, dmin DOUBLE, rms DOUBLE, net VARCHAR(500), id VARCHAR(80), updated TIMESTAMP, place VARCHAR(500), type VARCHAR(80))"
         cursor.execute(table)
         print "created table"
+        start_time = time.time()
         ea = read_file(filename,cursor)
+        timetaken = time.time() - start_time
         conobj.commit()
-        extract = "select week(time) ,count(id) as Earthquakes ,mag as magnitude from earthquake group by mag,week(time) having mag in (2,3,4,5) or mag>5"
+        extract = "select * from earthquake group by mag,week(time) having mag in (2,3,4,5) or mag>5"
         result = cursor.execute(extract)
-        for r in result:
-            print r
+        ans = " "
+        data = cursor.fetchall()
+        for x in data:
+            ans = ans + str(x)+"\n"
+        #print type(data)
+        qry = "Select count(*) from earthquake"
+        cursor.execute(qry)
+        count = cursor.fetchall()
+        print count
         trunc = "DROP TABLE earthquake"
         cursor.execute(trunc)
         #print type(ea)
-        return "success"
+        return "Time taken to insert into database MySql ="+str(timetaken)+"Number of Earthquake Greater than 2,3,4,5::"+ ans
+
     except Exception as e :
         print str(e)
         return e
