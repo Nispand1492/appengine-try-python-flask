@@ -105,11 +105,12 @@ def hello():
         conobj.commit()
         extract = "select week(time) ,count(id) as Earthquakes ,mag as magnitude from earthquake group by mag,week(time) having mag in (2,3,4,5) or mag>5"
         result = cursor.execute(extract)
-
+        for r in result:
+            print r
         trunc = "DROP TABLE earthquake"
         cursor.execute(trunc)
         #print type(ea)
-        return result
+        return "success"
     except Exception as e :
         print str(e)
         return e
