@@ -72,7 +72,7 @@ def insert(csv_data,cursor):
                    row[i] = "''"
            place = str(row[13])
            place.replace("'"," ")
-           qry = "INSERT INTO earthquake(time,latitude,longitude,depth,mag,magType,nst) VALUES('"+row[0]+"',"+row[1]+","+row[2]+","+row[3]+","+row[4]+",'"+row[5]+"',"+row[6]+","+row[7]+","+row[8]+","+row[9]+",'"+row[10]+"','"+row[11]+"','"+row[12]+"','"+place+"','"+row[14]+"',')"
+           qry = "INSERT INTO earthquake(time,latitude,longitude,depth,mag,magType,nst,gap,dmin,rms,net,id,updated,place,type) VALUES('"+row[0]+"',"+row[1]+","+row[2]+","+row[3]+","+row[4]+",'"+row[5]+"',"+row[6]+","+row[7]+","+row[8]+","+row[9]+",'"+row[10]+"','"+row[11]+"','"+row[12]+"','"+place+"','"+row[14]+"',')"
            print qry
            cursor.execute(qry)
        return "success"
