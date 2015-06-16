@@ -62,7 +62,7 @@ def route_to_upload_file():
 def upload_file():
     start_time = time.time()
     bucket_name = os.environ.get('BUCKET_NAME',app_identity.get_default_gcs_bucket_name())
-    filetoupload = "/"+bucket_name+"all_months.csv"
+    filetoupload = "/"+bucket_name+"/all_months.csv"
     contents = request.files.get('contents')
     raw = contents.file.read()
     write_retry_params = gcs.RetryParams(backoff_factor=1.1)
