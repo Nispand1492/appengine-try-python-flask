@@ -18,6 +18,7 @@ from oauth2client import file
 from oauth2client import client
 from oauth2client import tools
 from google.appengine.api import app_identity
+from StringIO import StringIO
 import googleapiclient.http
 
 import MySQLdb
@@ -53,7 +54,7 @@ filename = bucket + '/earthquake.csv'
 # the App Engine WSGI application server.
 def read_file(filename,cursor):
     with gcs.open(filename,'r') as gcs_file:
-        csv_data = csv.reader(gcs_file.read(),delimiter=',',quotechar = '"')
+        csv_data = csv.reader(StringIO(gcs_file.read()),delimiter=',',quotechar = '"')
     print "file read succes"
     result = insert(csv_data,cursor)
     gcs_file.close()
@@ -64,7 +65,6 @@ def insert(csv_data,cursor):
    csv_data.next()
    try:
        for row in csv_data:
-           print row
            row[0] = slicing(row[0])
            row[12] = slicing(row[12])
            for i in range(0,13):
@@ -100,7 +100,7 @@ def hello():
         print "created table"
         ea = read_file(filename,cursor)
         conobj.commit()
-        trunc = "TRUNCATE TABLE earthquake"
+        trunc = "DROP TABLE earthquake"
         cursor.execute(trunc)
         print type(ea)
         return ea
