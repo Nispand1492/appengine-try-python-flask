@@ -54,6 +54,25 @@ filename = bucket + '/all_month.csv'
 
 # Note: We don't need to call run() since our application is embedded within
 # the App Engine WSGI application server.
+@bottle.route('/route_to_upload_file')
+def route_to_upload_file():
+    return template('get_file',name="hello")
+
+@bottle.route('/upload_file',method='POST')
+def upload_file():
+    start_time = time.time()
+    bucket_name = os.environ.get('BUCKET_NAME',app_identity.get_default_gcs_bucket_name())
+    filetoupload = "/"+bucket_name+"all_months.csv"
+    contents = request.files.get('contents')
+    raw = contents.file.read()
+    write_retry_params = gcs.RetryParams(backoff_factor=1.1)
+    gcs_file = gcs.open(filetoupload,'w',content_type='text/plain',options={'x-goog-meta-foo': 'foo','x-goog-meta-bar': 'bar'},retry_params=write_retry_params)
+    gcs_file.write(raw)
+    gcs_file.close()
+    end_time = time.time()
+    time_taken = end_time-start_time
+    return template('time_taken_to_upload',time_taken=time_taken)
+
 def read_file(filename,cursor):
     with gcs.open(filename,'r') as gcs_file:
         csv_data = csv.reader(StringIO(gcs_file.read()),delimiter=',',quotechar = '"')
