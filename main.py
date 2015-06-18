@@ -52,6 +52,11 @@ filename = bucket + '/all_month.csv'
 def route_to_upload_file():
     return template('get_file',name="hello")
 
+@bottle.route('/web_interface')
+def web_interface():
+    return ('/Query_page')
+
+
 #function to upload file on google bucket
 @bottle.route('/upload_file',method='POST')
 def upload_file():
@@ -121,13 +126,13 @@ def main_fun():
         ea = read_file(filename,cursor)
         timetaken = time.time() - start_time
         conobj.commit()
-        extract = "select * from earthquake group by mag,week(time) having mag in (2,3,4,5) or mag>5"
+        extract = "select week(time),mag,count(id) from earthquake group by mag,week(time) having mag in (2,3,4,5) or mag>5"
         cursor.execute(extract)
-        ans = " "
+        ans = "<table><tr><th>Week</th><th>mag</th><th>Number of quakes</th></tr>"
         data = cursor.fetchall()
         for x in data:
-            ans = ans + str(x)+"</br>"
-
+            ans = ans +"<tr><td>" + str(x[0]) + "</td><td>" + str(x[1]) + "</td><td>" + str(x[2]) +"</td></tr>"
+        ans = ans + "</table>"
         qry = "Select count(*) from earthquake"
         cursor.execute(qry)
         count = cursor.fetchall()
