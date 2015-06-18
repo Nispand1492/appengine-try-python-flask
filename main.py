@@ -9,6 +9,7 @@ http://nealbuerger.com/2013/12/google-app-engine-import-csv-to-datastore/
 https://www.daniweb.com/software-development/python/threads/228057/insert-file-data-in-mysql-using-python
 http://stackoverflow.com/questions/15064376/python-read-a-csv-and-place-values-in-mysql-database
 """
+import cgi
 import os
 import csv
 import cloudstorage as gcs
@@ -18,7 +19,7 @@ import cloudstorage as gcs
 from google.appengine.api import app_identity
 from StringIO import StringIO
 
-from bottle import route, request, response, template
+from bottle import route, request, response, template, HTTPResponse
 
 import MySQLdb
 
@@ -28,7 +29,8 @@ from bottle import Bottle
 import time
 
 bottle = Bottle()
-
+conobj = MySQLdb.connect(unix_socket='/cloudsql/csecloud-971:cloudsql',user='root')
+cursor = conobj.cursor()
 my_default_retry_params = gcs.RetryParams(initial_delay=0.2,
                                           max_delay=5.0,
                                           backoff_factor=2,
@@ -54,7 +56,64 @@ def route_to_upload_file():
 
 @bottle.route('/web_interface')
 def web_interface():
-    return ('/Query_page')
+    return  template('Query_page',name="hello")
+
+@bottle.route('/process_query', method = 'GET')
+def process_query():
+    mag = request.GET.get('mag')
+    par1 = request.GET.get('par1')
+    par2 = request.GET.get('par2')
+    location = request.GET.get('loc')
+    print mag
+    print par1
+    print par2
+    print location
+    sql = "USE myclouddata"
+    cursor.execute(sql)
+    def_query = "SELECT * from earthquake WHERE "
+    if location == None:
+        data = fun_for_mag_only(def_query,mag,par1)
+
+    elif mag == None :
+        fun_for_location_only(def_query,location)
+
+    else:
+        fun_for_macandloc(def_query,mag,par1,par2,location)
+    resp = HTTPResponse(body = data,status = 200)
+    print data
+    return data
+
+def fun_for_mag_only(query,mag,par1):
+    if par1 == 'grt':
+        query = query + " mag > "+ mag
+        print query
+    elif par1 == 'less':
+        query = query + " mag < " + mag
+        print query
+    elif par1 == 'equal':
+        query = query + "mag = " + mag
+        print query
+    elif par1 == 'lte':
+        query = query + "mag < = " + mag
+        print query
+    elif par1 == 'gte':
+        query == query + "mag > =" +mag
+        print query
+    cursor.execute(query)
+    data = cursor.fetchall()
+    ans = " "
+    for x in data:
+        ans = ans + str(x) + "<br>"
+        ans = ans + "=========================================================================================================================<br>"
+
+    return ans
+
+def fun_for_location_only(query,location):
+
+    return "Done"
+
+def fun_for_macandloc(query,mag,par1,par2,location):
+    return "Done"
 
 
 #function to upload file on google bucket
@@ -111,8 +170,6 @@ def slicing(str1):
 @bottle.route('/')
 def main_fun():
     try:
-        conobj = MySQLdb.connect(unix_socket='/cloudsql/csecloud-971:cloudsql',user='root')
-        cursor = conobj.cursor()
         sql = "CREATE DATABASE IF NOT EXISTS myclouddata"
         print "created database"
         cursor.execute(sql)
