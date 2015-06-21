@@ -2,7 +2,7 @@
 #ID_NUMBER: 1001163146
 #BATCH TIME: 3.30 to 5.30 p.m.
 """Links Referred::
-https://www.facebook.com/l.php?u=https%3A%2F%2Fconsole.developers.google.com%2Fstart%2Fappengine%3F_ga%3D1.237094793.840266212.1433886398&h=CAQFXCrYN
+
 http://stackoverflow.com/questions/3215140/google-app-engine-appcfg-py-rollback
 https://cloud.google.com/appengine/docs/python/googlecloudstorageclient/
 http://nealbuerger.com/2013/12/google-app-engine-import-csv-to-datastore/
@@ -31,6 +31,9 @@ import time
 bottle = Bottle()
 conobj = MySQLdb.connect(unix_socket='/cloudsql/csecloud-971:cloudsql',user='root')
 cursor = conobj.cursor()
+sql = "USE myclouddata"
+cursor.execute(sql)
+print "database selected"
 my_default_retry_params = gcs.RetryParams(initial_delay=0.2,
                                           max_delay=5.0,
                                           backoff_factor=2,
@@ -58,7 +61,7 @@ def route_to_upload_file():
 def web_interface():
     return  template('Query_page',name="hello")
 
-@bottle.route('/process_query', method = 'GET')
+@bottle.route('/process_query')
 def process_query():
     mag = request.GET.get('mag')
     par1 = request.GET.get('par1')
@@ -68,8 +71,6 @@ def process_query():
     print par1
     print par2
     print location
-    sql = "USE myclouddata"
-    cursor.execute(sql)
     def_query = "SELECT * from earthquake WHERE "
     if location == None:
         data = fun_for_mag_only(def_query,mag,par1)
@@ -79,9 +80,13 @@ def process_query():
 
     else:
         fun_for_macandloc(def_query,mag,par1,par2,location)
-    resp = HTTPResponse(body = data,status = 200)
-    print data
-    return data
+
+    ans = " "
+    for x in data:
+        ans = ans + str(x[0]) + "|" + str(x[1]) + "|"+ str(x[2])+"|"+ str(x[3])+"|"+ str(x[4])+"|"+ str(x[5])+"|"+ str(x[6])+"|"+ str(x[7])+"|"+ str(x[8])+"|"+ str(x[9])+"|"+ str(x[10])+"|"+ str(x[11])+"|"+ str(x[12])+"|"+ str(x[13])+"|"+ str(x[14])
+        ans = ans + "============================================================================================================================================="
+
+    return template('Display_data', details = ans)
 
 def fun_for_mag_only(query,mag,par1):
     if par1 == 'grt':
@@ -101,19 +106,36 @@ def fun_for_mag_only(query,mag,par1):
         print query
     cursor.execute(query)
     data = cursor.fetchall()
-    ans = " "
-    for x in data:
-        ans = ans + str(x) + "<br>"
-        ans = ans + "=========================================================================================================================<br>"
-
-    return ans
+    return data
 
 def fun_for_location_only(query,location):
-
-    return "Done"
+    query = query + "place like '%"+location+"%'"
+    cursor.execute(query)
+    data =cursor.fetchall()
+    return data
 
 def fun_for_macandloc(query,mag,par1,par2,location):
-    return "Done"
+    if par1 == 'grt':
+        query = query + " mag > "+ mag + " AND place like %'"+location+"%'"
+        print query
+    elif par1 == 'less':
+        query = query + " mag < " + mag + " AND place like %'"+location+"%'"
+        print query
+    elif par1 == 'equal':
+        query = query + "mag = " + mag + " AND place like %'"+location+"%'"
+        print query
+    elif par1 == 'lte':
+        query = query + "mag < = " + mag + " AND place like %'"+location+"%'"
+        print query
+    elif par1 == 'gte':
+        query == query + "mag > =" +mag + " AND place like %'"+location+"%'"
+        print query
+
+    cursor.execute(query)
+    data = cursor.fetchall()
+
+    return data
+
 
 
 #function to upload file on google bucket
@@ -170,6 +192,11 @@ def slicing(str1):
 @bottle.route('/')
 def main_fun():
     try:
+        conobj = MySQLdb.connect(unix_socket='/cloudsql/csecloud-971:cloudsql',user='root')
+        cursor = conobj.cursor()
+        sql = "USE myclouddata"
+        cursor.execute(sql)
+        print "database selected"
         sql = "CREATE DATABASE IF NOT EXISTS myclouddata"
         print "created database"
         cursor.execute(sql)
@@ -180,12 +207,12 @@ def main_fun():
         cursor.execute(table)
         print "created table"
         start_time = time.time()
-        ea = read_file(filename,cursor)
+        ea = read_file(filename , cursor)
         timetaken = time.time() - start_time
         conobj.commit()
         extract = "select week(time),mag,count(id) from earthquake group by mag,week(time) having mag in (2,3,4,5) or mag>5"
         cursor.execute(extract)
-        ans = "<table><tr><th>Week</th><th>mag</th><th>Number of quakes</th></tr>"
+        ans = "<table border = 1 ><tr><th>Week</th><th>mag</th><th>Number of quakes</th></tr>"
         data = cursor.fetchall()
         for x in data:
             ans = ans +"<tr><td>" + str(x[0]) + "</td><td>" + str(x[1]) + "</td><td>" + str(x[2]) +"</td></tr>"
@@ -195,7 +222,7 @@ def main_fun():
         count = cursor.fetchall()
         print count
         trunc = "DROP TABLE earthquake"
-        cursor.execute(trunc)
+        #cursor.execute(trunc)
         return "Time taken to insert into database MySql ="+str(timetaken)+"<br>Number of Earthquake Greater than 2,3,4,5::<br>"+ ans
 
     except Exception as e :
